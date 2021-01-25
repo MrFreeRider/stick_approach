@@ -5,18 +5,21 @@
 *** Doctoral Student in Economics
 *** Universidad de los Andes
 ***********************************************************************************
+//recuerda comprobar que no hay efecto en los ingresos de los acueductos
 
-
-xtreg cons_po   fines, fe //15.73396   0.121 
+xtreg cons_po   fines, fe // 15.73396   0.121 
 xtreg cons_pf   fines, fe //  .712656     0.893
-xtreg cons_phcut1   fines, fe //  .6218116       0.222 
-xtreg cons_phcut5   fines, fe //  -.2807794      0.000 
-xtreg cons_phcut10   fines, fe //  -.151109        0.000 
-xtreg cons_phcut25   fines, fe // -.0813964     0.024 
+xtreg cons_ph   fines, fe //  -.4467086      0.0000
+
+xtreg cons_phcut1   fines, fe //  .6218116       0.222   -.3077391  0.000 
+xtreg cons_phcut5   fines, fe //  -.2807794      0.000   -.2429487 
+xtreg cons_phcut10   fines, fe //  -.151109        0.000  -.1467221 
+xtreg cons_phcut25   fines, fe // -.0813964     0.024 	-.0918799
 
 
 xtreg cons_po   fines rainfall , fe  //  20.39644     0.048
 xtreg cons_pf   fines rainfall , fe //     1.100522  0.089
+xtreg cons_ph   fines rainfall , fe //     -.2711342  0.000
 xtreg cons_phcut1   fines rainfall , fe //  .9158227       0.222 
 xtreg cons_phcut5   fines rainfall , fe //  -.3718582  0.000 
 xtreg cons_phcut10   fines rainfall , fe // -.2221066 0.000
@@ -45,30 +48,30 @@ xtreg cons_phcut10   fines rainfall temperature  users_fix bill_ph, fe //  -.319
 xtreg cons_phcut25   fines rainfall temperature  users_fix bill_ph, fe // -.2344885     0.00
 
 xtreg cons_po   fines rainfall temperature  users_fix bill_ph i.period, fe  // -.4012615 0.911 
-xtreg cons_pf   fines rainfall temperature  users_fix bill_ph  i.period , fe //     -.4012615  0.911
+xtreg cons_ph  fines rainfall temperature users_fix hhi i.t , fe //     -.4012615  0.911
 xtreg cons_phcut1   fines rainfall  temperature  users_fix bill_ph  i.period , fe //   1.462963    0.063 
-xtreg cons_phcut5   fines rainfall  temperature  users_fix bill_ph  i.period, fe //  -.1994144      0.002
+xtreg cons_phcut5   fines rainfall  temperature  users_fix   i.period, fe //  -.1994144      0.002
 xtreg cons_phcut10   fines rainfall temperature  users_fix bill_ph  i.period, fe //   -.0258273    0.616 
 xtreg cons_phcut25   fines rainfall temperature  users_fix bill_ph  i.period, fe // .07906      0.089 
 
 
 xtreg cons_po   fines  i.period, fe  // 14.64734  0.911 
-xtreg cons_pf   fines  i.period , fe //      -.983842  0.866 
+xtreg cons_ph   fines  i.period , fe //      -.983842  0.866 
 xtreg cons_phcut1   fines i.period , fe //   1.049066      0.062 
 xtreg cons_phcut5   fines  i.period, fe //  .0600572       0.252 
 xtreg cons_phcut10   fines  i.period, fe //   .1354409    0.001  
 xtreg cons_phcut25   fines  i.period, fe // .163257     0.000
 
 
-xtreg cons_po   fines rainfall temperature  users_fix bill_ph i.period, fe vce(cluster month_dpto) nonest // -.4012615  0.914 
+xtreg cons_po   fines rainfall temperature  users_fix bill_pf i.period, fe vce(cluster month_dpto) nonest // -.4012615  0.914 
 xtreg cons_pf   fines rainfall temperature  users_fix bill_ph  i.period , fe vce(cluster month_dpto) nonest //     -.4012615   0.914 
 xtreg cons_phcut1   fines rainfall  temperature  users_fix bill_ph  i.period , fe vce(cluster month_dpto) nonest //  1.462963    0.001
-xtreg cons_phcut5   fines rainfall  temperature  users_fix bill_ph  i.period, fe vce(cluster month_dpto) nonest  //  -.1994144     0.024 
+xtreg cons_phcut5   fines rainfall  temperature  users_fix bill_pf  i.period, fe vce(cluster month_dpto) nonest  //  -.1994144     0.024 
 xtreg cons_phcut10   fines rainfall temperature  users_fix bill_ph  i.period, fe vce(cluster month_dpto) nonest  //   -.0258273    0.719 
 xtreg cons_phcut25   fines rainfall temperature  users_fix bill_ph i.period, fe vce(cluster month_dpto) nonest  // .07906      0.175
 
 
-*** Number Users 
+*** Calculating number of users overall and by type of WSS 
 bys fines: egen users_affected=sum(users_fix)
 bys fines: egen users_affected1=sum(users_fix) if type_org==1
 bys fines: egen users_affected2=sum(users_fix) if type_org==2
@@ -77,11 +80,16 @@ bys fines: egen users_affected4=sum(users_fix) if type_org==4
 
 
 ** Covariates for regressions
-global controlvar rainfall temperature  users_fix bill_ph  
+global controlvar rainfall temperature users_fix n_sub bill_per
 
-** Regressions
+***************************************************************
+** Regressions Overall Sample
+***************************************************************
+
+// Effect of fines with WSS FE.
+
 eststo clear
-xtreg cons_phcut5   fines,  fe  //All  No adjusted
+xtreg cons_phcut5  fines,  fe  //All  No adjusted
 estadd local wssfe Y
 estadd local  timefe N
 estadd local control N
@@ -90,7 +98,8 @@ matrix A = (r(estimate), r(estimate)-(2.576* r(se)), r(estimate)+(2.576* r(se)),
 matrix coln A= beta liminf99 limsup99 liminf95 limsup95 liminf90 limsup90 pval
 eststo A
 
-xtreg cons_phcut5  fines  i.period $controlvar , fe  vce(cluster month_dpto) nonest // All Adjusted
+// Effect of fines with WSS FE, covariates, and seasonality fixed effects.
+xtreg cons_phcut5  fines i.t $controlvar , fe  vce(cluster mpio) nonest 
 estadd local  timefe Y
 estadd local wssfe Y
 estadd local control Y
@@ -99,7 +108,23 @@ matrix B = (r(estimate), r(estimate)-(2.576* r(se)), r(estimate)+(2.576* r(se)),
 matrix coln B = beta liminf99 limsup99 liminf95 limsup95 liminf90 limsup90 pval
 eststo B
 
-xtreg cons_phcut5   fines  if type_org==1  , fe  //Public No adjusted
+// Effect of fines with WSS FE, covariates, and seasonality fixed effects.
+xtreg cons_phcut5  fines i.month i.month##i.dpto post $controlvar , fe  vce(cluster mpio) nonest 
+estadd local  timefe Y
+estadd local wssfe Y
+estadd local control Y
+lincom fines
+matrix B = (r(estimate), r(estimate)-(2.576* r(se)), r(estimate)+(2.576* r(se)),r(estimate)-(1.96* r(se)), r(estimate)+(1.96* r(se)) , r(estimate)-(1.645* r(se)), r(estimate)+(1.645* r(se)), 2*ttail(r(df),abs(r(estimate)/r(se))))
+matrix coln B = beta liminf99 limsup99 liminf95 limsup95 liminf90 limsup90 pval
+eststo B
+
+
+***************************************************************
+** Regressions For State-Owned WSS
+***************************************************************
+
+// Effect of fines with WSS FE for State-owned subsample.
+xtreg cons_phcut5  fines  if type_org==1  , fe  //Public No adjusted
 estadd local wssfe Y
 estadd local  timefe N
 estadd local control N
@@ -108,7 +133,8 @@ matrix C = (r(estimate), r(estimate)-(2.576* r(se)), r(estimate)+(2.576* r(se)),
 matrix coln C = beta liminf99 limsup99 liminf95 limsup95 liminf90 limsup90 pval
 eststo C
 
-xtreg cons_phcut5   fines  i.period $controlvar  if type_org==1  , fe vce(cluster month_dpto) nonest //Public Adjusted
+// Effect of fines with WSS FE for State-owned subsample: Including seasonality FE, covariates and clustered standard errors at XXX level. 
+xtreg cons_phcut5  fines  i.month $controlvar if type_org==1, fe vce(cluster month_dpto) nonest 
 estadd local  timefe Y
 estadd local wssfe Y
 estadd local control Y
@@ -117,6 +143,10 @@ matrix D = (r(estimate), r(estimate)-(2.576* r(se)), r(estimate)+(2.576* r(se)),
 matrix coln D = beta liminf99 limsup99 liminf95 limsup95 liminf90 limsup90 pval
 eststo D
 
+***************************************************************
+** Regressions For Local-Government WSS
+***************************************************************
+//Regressions For Local-Government WSS
 xtreg cons_phcut5   fines   if type_org==2 , fe //Local No adjusted
 estadd local wssfe Y
 estadd local  timefe N
@@ -126,7 +156,7 @@ matrix E = (r(estimate), r(estimate)-(2.576* r(se)), r(estimate)+(2.576* r(se)),
 matrix coln E = beta liminf99 limsup99 liminf95 limsup95 liminf90 limsup90 pval
 eststo E
 
-xtreg cons_phcut5   fines   i.period $controlvar if type_org==2 , fe vce(cluster month_dpto) nonest  //Local Adjusted
+xtreg cons_phcut5   fines   i.t $controlvar if type_org==2 , fe vce(cluster month_dpto) nonest  //Local Adjusted
 estadd local  timefe Y
 estadd local wssfe Y
 estadd local control Y
@@ -144,7 +174,7 @@ matrix G = (r(estimate), r(estimate)-(2.576* r(se)), r(estimate)+(2.576* r(se)),
 matrix coln G = beta liminf99 limsup99 liminf95 limsup95 liminf90 limsup90 pval
 eststo G
 
-xtreg cons_phcut5   fines  i.period $controlvar  if type_org==3, fe  vce(cluster month_dpto) nonest //Community Adjusted
+xtreg cons_phcut5   fines  i.t $controlvar  if type_org==3, fe  vce(cluster month_dpto) nonest //Community Adjusted
 estadd local  timefe Y
 estadd local wssfe Y
 estadd local control Y
@@ -162,7 +192,7 @@ matrix I = (r(estimate), r(estimate)-(2.576* r(se)), r(estimate)+(2.576* r(se)),
 matrix coln I = beta liminf99 limsup99 liminf95 limsup95 liminf90 limsup90 pval
 eststo I
 
-xtreg cons_phcut5   fines  i.period $controlvar   if type_org==4 , fe vce(cluster month_dpto) nonest //private Adjusted
+xtreg cons_phcut5   fines  i.t $controlvar   if type_org==4 , fe vce(cluster month_dpto) nonest //private Adjusted
 estadd local  timefe Y
 estadd local wssfe Y
 estadd local control Y
