@@ -542,7 +542,15 @@ egen tm=group(timead mpio)
 egen mt=group( mpio timead)
 egen dt=group( dpto timead)
 
+egen my=group(month year)
 
+// time fixed effects timead=t. Effect is positive but zero (16 periods)
+// month-year = Period FE. Effect is negative but zero (32 periods)
+// month FE. Effect is negative but zero
+// Year FE. Effect is negative but zero
+
+
+// One regression with month, one with year fixed effects and one with months-dpto combination.
 
 global var_count cons_adj rainfall temperature users_fix hhi n_sub bill_per
 
@@ -555,7 +563,7 @@ gen count = count_cons_adj +  count_rainfall + count_temperature +count_users_fi
 
 bys wss: egen count_ob=count(time)
 
-egen my=group(month year)
+
 
 xtset wss t
 
@@ -565,6 +573,7 @@ keep if count_ob==16 // 8 periods pre and 8 post
 
 eststo clear
 global controlvar rainfall temperature users_fix hhi n_sub bill_per
+
 xtreg cons_ph  fines  i.t $controlvar dist_border , fe
 
 xtreg cons_ph  fines  i.month i.year $controlvar dist_border if type_org==1, fe
